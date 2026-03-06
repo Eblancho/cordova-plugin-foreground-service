@@ -1,6 +1,6 @@
 {
     "name": "cordova-plugin-foreground-service",
-    "version": "1.1.3",
+    "version": "2.0.0",
     "description": "Foreground service with ongoing notification.",
     "cordova": {
       "id": "cordova-plugin-foreground-service",
@@ -10,7 +10,7 @@
     },
     "repository": {
       "type": "git",
-      "url": "git+https://github.com/DavidBriglio/cordova-plugin-foreground-service"
+      "url": "git+https://github.com/Eblancho/cordova-plugin-foreground-service"
     },
     "keywords": [
       "cordova",
@@ -21,11 +21,11 @@
       "ecosystem:cordova",
       "cordova-android"
     ],
-    "author": "David Briglio",
+    "author": "Eblancho",
     "license": "MIT",
     "bugs": {
-      "url": "https://github.com/DavidBriglio/cordova-plugin-foreground-service/issues"
+      "url": "https://github.com/Eblancho/cordova-plugin-foreground-service/issues"
     },
-    "homepage": "https://github.com/DavidBriglio/cordova-plugin-foreground-service"
+    "homepage": "https://github.com/Eblancho/cordova-plugin-foreground-service"
   }
   
