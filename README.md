@@ -26,7 +26,7 @@ cordova plugin add cordova-plugin-foreground-service
 
 #or
 
-cordova plugin add https://github.com/DavidBriglio/cordova-plugin-foreground-service
+cordova plugin add https://github.com/Eblancho/cordova-plugin-foreground-service
 ```
 
 ### Start Method
