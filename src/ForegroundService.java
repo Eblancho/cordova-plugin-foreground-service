@@ -1,92 +1,148 @@
 package com.davidbriglio.foreground;
 
-import android.content.Intent;
-import android.content.Context;
-import android.app.Service;
+import android.annotation.TargetApi;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
-import android.os.IBinder;
+import android.app.Service;
+import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
-import android.annotation.TargetApi;
+import android.os.IBinder;
 
 public class ForegroundService extends Service {
+
+    private static final String ACTION_START = "start";
+    private static final String ACTION_STOP = "stop";
+    private static final String CHANNEL_ID = "foreground.service.channel";
+    private static final String CHANNEL_NAME = "Background Services";
+    private static final String CHANNEL_DESCRIPTION = "Enables background processing.";
+    private static final int DEFAULT_NOTIFICATION_ID = 197812504;
+    private static final int DEFAULT_ICON_RES_ID = 17301514; // android.R.drawable.btn_star
+
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        if (intent.getAction().equals("start")) {
-            // Start the service
-            startPluginForegroundService(intent.getExtras());
-        } else {
-            // Stop the service
+        // Important: Android peut relancer un service sticky avec intent == null.
+        // On ne veut jamais crasher ici.
+        if (intent == null) {
             stopForeground(true);
             stopSelf();
+            return START_NOT_STICKY;
         }
 
-        return START_STICKY;
+        String action = intent.getAction();
+        if (ACTION_START.equals(action)) {
+            startPluginForegroundService(intent.getExtras());
+            return START_NOT_STICKY;
+        }
+
+        if (ACTION_STOP.equals(action)) {
+            stopForeground(true);
+            stopSelf();
+            return START_NOT_STICKY;
+        }
+
+        // Action inconnue : on stoppe proprement, sans crash.
+        stopForeground(true);
+        stopSelf();
+        return START_NOT_STICKY;
     }
 
     @TargetApi(26)
     private void startPluginForegroundService(Bundle extras) {
         Context context = getApplicationContext();
 
-        // Delete notification channel if it already exists
-        NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-
-        // Prevent RuntimeException such as: Not allowed to delete channel foreground.service.channel with a foreground service
-        // See: https://github.com/DavidBriglio/cordova-plugin-foreground-service/issues/25
-        try {
-            manager.deleteNotificationChannel("foreground.service.channel");
-        } catch(Exception e) {
-            e.printStackTrace();
+        if (extras == null) {
+            extras = new Bundle();
         }
 
-        // Get notification channel importance
-        Integer importance;
+        NotificationManager manager =
+            (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 
-        try {
-            importance = Integer.parseInt((String) extras.get("importance"));
-        } catch (NumberFormatException e) {
-            importance = 1;
+        if (manager == null) {
+            stopSelf();
+            return;
         }
 
-        switch(importance) {
-            case 2:
-                importance = NotificationManager.IMPORTANCE_DEFAULT;
-                break;
-            case 3:
-                importance = NotificationManager.IMPORTANCE_HIGH;
-                break;
-            default:
-                importance = NotificationManager.IMPORTANCE_LOW;
-            // We are not using IMPORTANCE_MIN because we want the notification to be visible
+        int importance = parseImportance(extras.getString("importance"));
+
+        // Ne pas supprimer le channel existant.
+        // On le crée simplement s'il n'existe pas déjà.
+        NotificationChannel existingChannel = manager.getNotificationChannel(CHANNEL_ID);
+        if (existingChannel == null) {
+            NotificationChannel channel =
+                new NotificationChannel(CHANNEL_ID, CHANNEL_NAME, importance);
+            channel.setDescription(CHANNEL_DESCRIPTION);
+            manager.createNotificationChannel(channel);
         }
 
-        // Create notification channel
-        NotificationChannel channel = new NotificationChannel("foreground.service.channel", "Background Services", importance);
-        channel.setDescription("Enables background processing.");
-        getSystemService(NotificationManager.class).createNotificationChannel(channel);
+        String title = extras.getString("title");
+        if (title == null || title.trim().isEmpty()) {
+            title = "App active";
+        }
 
-        // Get notification icon
-        int icon = getResources().getIdentifier((String) extras.get("icon"), "drawable", context.getPackageName());
+        String text = extras.getString("text");
+        if (text == null || text.trim().isEmpty()) {
+            text = "Traitement en cours";
+        }
 
-        // Make notification
-        Notification notification = new Notification.Builder(context, "foreground.service.channel")
-            .setContentTitle((CharSequence) extras.get("title"))
-            .setContentText((CharSequence) extras.get("text"))
+        String iconName = extras.getString("icon");
+        int icon = 0;
+        if (iconName != null && !iconName.trim().isEmpty()) {
+            icon = getResources().getIdentifier(iconName, "drawable", context.getPackageName());
+        }
+        if (icon == 0) {
+            icon = DEFAULT_ICON_RES_ID;
+        }
+
+        int notificationId = parseNotificationId(extras.getString("id"));
+
+        Notification notification = new Notification.Builder(context, CHANNEL_ID)
+            .setContentTitle(title)
+            .setContentText(text)
             .setOngoing(true)
-            .setSmallIcon(icon == 0 ? 17301514 : icon) // Default is the star icon
+            .setSmallIcon(icon)
             .build();
 
-        // Get notification ID
-        Integer id;
+        // Le FGS doit entrer en foreground immédiatement avec une notif valide.
+        startForeground(notificationId, notification);
+    }
+
+    private int parseImportance(String value) {
+        int rawValue = 1;
         try {
-            id = Integer.parseInt((String) extras.get("id"));
-        } catch (NumberFormatException e) {
-            id = 0;
+            if (value != null) {
+                rawValue = Integer.parseInt(value);
+            }
+        } catch (NumberFormatException ignored) {
+            rawValue = 1;
         }
 
-        // Put service in foreground and show notification (id of 0 is not allowed)
-        startForeground(id != 0 ? id : 197812504, notification);
+        switch (rawValue) {
+            case 2:
+                return NotificationManager.IMPORTANCE_DEFAULT;
+            case 3:
+                return NotificationManager.IMPORTANCE_HIGH;
+            default:
+                return NotificationManager.IMPORTANCE_LOW;
+        }
+    }
+
+    private int parseNotificationId(String value) {
+        int id = DEFAULT_NOTIFICATION_ID;
+        try {
+            if (value != null) {
+                id = Integer.parseInt(value);
+            }
+        } catch (NumberFormatException ignored) {
+            id = DEFAULT_NOTIFICATION_ID;
+        }
+
+        if (id == 0) {
+            return DEFAULT_NOTIFICATION_ID;
+        }
+
+        return id;
     }
 
     @Override
