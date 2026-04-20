@@ -73,7 +73,12 @@ public class ForegroundPlugin extends CordovaPlugin {
             }
 
             String packageName = activity.getPackageName();
-            for (ActivityManager.RunningAppProcessInfo process : activityManager.getRunningAppProcesses()) {
+            java.util.List<ActivityManager.RunningAppProcessInfo> processes = activityManager.getRunningAppProcesses();
+            if (processes == null) {
+                return true;
+            }
+
+            for (ActivityManager.RunningAppProcessInfo process : processes) {
                 if (process == null) {
                     continue;
                 }

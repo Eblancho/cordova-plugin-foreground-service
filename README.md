@@ -23,6 +23,10 @@ On Android 12+, the system can throw `ForegroundServiceStartNotAllowedException`
 
 This plugin declares `android:foregroundServiceType="dataSync"` and adds `android.permission.FOREGROUND_SERVICE_DATA_SYNC` in the manifest via `plugin.xml`. If you change the service type in your app, ensure the matching `FOREGROUND_SERVICE_*` permission is also declared.
 
+### Android 13+ notifications permission (API 33+)
+
+If your app targets Android 13+ and notifications are disabled/denied, the foreground service notification may not appear. Ensure the user grants the runtime notification permission (`POST_NOTIFICATIONS`) using a permissions plugin.
+
 ---
 
 ## Setup and Usage
