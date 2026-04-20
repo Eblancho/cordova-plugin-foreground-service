@@ -89,6 +89,13 @@ public class ForegroundService extends Service {
         }
 
         String iconName = extras.getString("icon");
+        // Accepte "myicon" ou "drawable/myicon" ou "drawable\\myicon"
+        if (iconName != null) {
+            int lastSlash = Math.max(iconName.lastIndexOf('/'), iconName.lastIndexOf('\\'));
+            if (lastSlash >= 0 && lastSlash + 1 < iconName.length()) {
+                iconName = iconName.substring(lastSlash + 1);
+            }
+        }
         int icon = 0;
         if (iconName != null && !iconName.trim().isEmpty()) {
             icon = getResources().getIdentifier(iconName, "drawable", context.getPackageName());

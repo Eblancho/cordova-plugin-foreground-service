@@ -2,7 +2,10 @@ package com.davidbriglio.foreground;
 
 import android.annotation.TargetApi;
 import android.app.Activity;
+import android.app.ActivityManager;
 import android.content.Intent;
+import android.content.Context;
+import android.util.Log;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaPlugin;
@@ -10,6 +13,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 
 public class ForegroundPlugin extends CordovaPlugin {
+
+    private static final String TAG = "ForegroundPlugin";
 
     @Override
     @TargetApi(26)
@@ -30,6 +35,12 @@ public class ForegroundPlugin extends CordovaPlugin {
         Intent intent = new Intent(activity, ForegroundService.class);
 
         if ("start".equals(action)) {
+            if (!isAppInForeground(activity)) {
+                Log.w(TAG, "Refusing to start FGS: app not in foreground.");
+                command.error("Foreground service start not allowed: app is not in foreground. Call start() while the app is visible (usually after a user action).");
+                return true;
+            }
+
             intent.setAction("start");
 
             intent.putExtra("title", getSafeArg(args, 0, "App active"));
@@ -51,6 +62,38 @@ public class ForegroundPlugin extends CordovaPlugin {
 
         command.error("Unsupported action: " + action);
         return false;
+    }
+
+    private boolean isAppInForeground(Activity activity) {
+        try {
+            ActivityManager activityManager =
+                (ActivityManager) activity.getSystemService(Context.ACTIVITY_SERVICE);
+            if (activityManager == null) {
+                return true;
+            }
+
+            String packageName = activity.getPackageName();
+            for (ActivityManager.RunningAppProcessInfo process : activityManager.getRunningAppProcesses()) {
+                if (process == null) {
+                    continue;
+                }
+
+                if (!packageName.equals(process.processName)) {
+                    continue;
+                }
+
+                // IMPORTANCE_FOREGROUND: app visible/interactive
+                // IMPORTANCE_VISIBLE: visible (e.g. dialog on top) - acceptable for user-initiated starts
+                return process.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND
+                    || process.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_VISIBLE;
+            }
+        } catch (Throwable ignored) {
+            // If we cannot determine state, don't block.
+            return true;
+        }
+
+        // If process not found, be conservative and don't block.
+        return true;
     }
 
     private String getSafeArg(JSONArray args, int index, String defaultValue) {
