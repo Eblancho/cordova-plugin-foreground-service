@@ -9,9 +9,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.util.Log;
 
 public class ForegroundService extends Service {
 
+    private static final String TAG = "ForegroundService";
     private static final String ACTION_START = "start";
     private static final String ACTION_STOP = "stop";
     private static final String CHANNEL_ID = "foreground.service.channel";
@@ -105,7 +107,61 @@ public class ForegroundService extends Service {
             .build();
 
         // Le FGS doit entrer en foreground immédiatement avec une notif valide.
+        // Sur Android 12+ il peut être interdit de démarrer un FGS depuis l'arrière-plan.
+        // Dans ce cas, on stoppe proprement pour éviter de crasher tout le process.
+        try {
+            startForegroundCompat(notificationId, notification);
+        } catch (RuntimeException ex) {
+            if (isForegroundStartNotAllowed(ex)) {
+                Log.w(TAG, "startForeground() not allowed (app in background / restricted); stopping service.", ex);
+                stopSelf();
+                return;
+            }
+            throw ex;
+        }
+    }
+
+    private void startForegroundCompat(int notificationId, Notification notification) {
+        // Android 10+ ajoute la surcharge startForeground(id, notification, serviceType).
+        // Android 14 (targetSdk 34) exige explicitement un type; on tente donc d'utiliser
+        // cette surcharge quand elle existe, sans dépendance compileSdk spécifique.
+        if (android.os.Build.VERSION.SDK_INT >= 29) {
+            try {
+                int serviceType = 0;
+                try {
+                    serviceType = Class.forName("android.content.pm.ServiceInfo")
+                        .getField("FOREGROUND_SERVICE_TYPE_DATA_SYNC")
+                        .getInt(null);
+                } catch (Throwable ignored) {
+                    serviceType = 0;
+                }
+
+                if (serviceType != 0) {
+                    Service.class
+                        .getMethod("startForeground", int.class, Notification.class, int.class)
+                        .invoke(this, notificationId, notification, serviceType);
+                    return;
+                }
+            } catch (Throwable ignored) {
+                // Fallback ci-dessous.
+            }
+        }
+
         startForeground(notificationId, notification);
+    }
+
+    private boolean isForegroundStartNotAllowed(Throwable throwable) {
+        // ForegroundServiceStartNotAllowedException n'existe qu'à partir d'Android 12 (API 31).
+        // On détecte via le nom de classe pour éviter tout problème de compilation.
+        Throwable current = throwable;
+        while (current != null) {
+            String name = current.getClass().getName();
+            if ("android.app.ForegroundServiceStartNotAllowedException".equals(name)) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
     }
 
     private int parseImportance(String value) {
@@ -143,6 +199,12 @@ public class ForegroundService extends Service {
         }
 
         return id;
+    }
+
+    @Override
+    public void onDestroy() {
+        stopForeground(true);
+        super.onDestroy();
     }
 
     @Override

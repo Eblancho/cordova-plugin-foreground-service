@@ -15,6 +15,14 @@ This plugin allows for android devices to continue running services in the backg
 
 ***NOTE: Using cordova version >= 8.0.0 is recommended.***
 
+### Android 12+ (API 31+) background start limits
+
+On Android 12+, the system can throw `ForegroundServiceStartNotAllowedException` if you try to start a foreground service while your app is in the background (not user-visible). Make sure you call `cordova.plugins.foregroundService.start(...)` while the app is in the foreground (typically right after a user action). If started while restricted, the service will stop itself and log a warning instead of crashing the whole app process.
+
+### Android 14+ (targetSdk 34) foreground service types
+
+This plugin declares `android:foregroundServiceType="dataSync"` and adds `android.permission.FOREGROUND_SERVICE_DATA_SYNC` in the manifest via `plugin.xml`. If you change the service type in your app, ensure the matching `FOREGROUND_SERVICE_*` permission is also declared.
+
 ---
 
 ## Setup and Usage
