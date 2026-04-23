@@ -39,6 +39,8 @@
             <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
             <!-- Android 13+ requires runtime permission for notifications -->
             <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+            <!-- Allow requesting exclusion from Doze / battery optimizations (user prompt). -->
+            <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
         </config-file>
     </platform>
 

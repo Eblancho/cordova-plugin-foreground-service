@@ -47,5 +47,30 @@ module.exports = {
   // stop(successCb, errorCb)
   stop: function(successCb, errorCb) {
     exec(successCb || null, errorCb || null, "ForegroundPlugin", "stop", []);
+  },
+  // requestNotificationPermission(successCb, errorCb)
+  // Android 13+ only (POST_NOTIFICATIONS). On older Android versions this is a no-op success.
+  requestNotificationPermission: function(successCb, errorCb) {
+    exec(successCb || null, errorCb || null, "ForegroundPlugin", "requestNotificationPermission", []);
+  },
+  // openNotificationSettings(successCb, errorCb)
+  // Opens the system notification settings screen for this app.
+  openNotificationSettings: function(successCb, errorCb) {
+    exec(successCb || null, errorCb || null, "ForegroundPlugin", "openNotificationSettings", []);
+  },
+  // isIgnoringBatteryOptimizations(successCb, errorCb)
+  // Android 6+ (API 23+). successCb receives 1 (true) or 0 (false).
+  isIgnoringBatteryOptimizations: function(successCb, errorCb) {
+    exec(successCb || null, errorCb || null, "ForegroundPlugin", "isIgnoringBatteryOptimizations", []);
+  },
+  // requestIgnoreBatteryOptimizations(successCb, errorCb)
+  // Opens the system prompt to exclude the app from battery optimizations (Doze) on Android 6+.
+  requestIgnoreBatteryOptimizations: function(successCb, errorCb) {
+    exec(successCb || null, errorCb || null, "ForegroundPlugin", "requestIgnoreBatteryOptimizations", []);
+  },
+  // openBatteryOptimizationSettings(successCb, errorCb)
+  // Opens the battery optimization settings list screen.
+  openBatteryOptimizationSettings: function(successCb, errorCb) {
+    exec(successCb || null, errorCb || null, "ForegroundPlugin", "openBatteryOptimizationSettings", []);
   }
 };
