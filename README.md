@@ -62,6 +62,41 @@ cordova.plugins.foregroundService.start('GPS Running', 'Background Service', 'my
 cordova.plugins.foregroundService.start('GPS Running', 'Background Service');
 ```
 
+### Android 13+ (API 33+) Notification Permission
+
+If your app targets Android 13+ and the user denies notifications, a foreground service **cannot** reliably show its ongoing notification.
+This plugin will refuse to start and return an error until notifications are allowed.
+
+Also note: on Android 8+ a user can disable the specific notification channel. If the channel is blocked, the plugin will also refuse to start.
+
+You can request the runtime permission (Android 13+) and/or open the system notification settings:
+
+```javascript
+cordova.plugins.foregroundService.requestNotificationPermission(
+  () => console.log('Notifications granted'),
+  (err) => console.warn('Notifications denied', err)
+);
+
+cordova.plugins.foregroundService.openNotificationSettings();
+```
+
+### Battery optimizations / Doze (Android 6+)
+
+On some OEM devices (notably Samsung), aggressive battery optimizations can kill your app process while it is waiting for results from external activities (camera intents, file chooser, etc.). A foreground service helps, but you should also ask the user to exclude the app from battery optimizations.
+
+This plugin exposes helpers:
+
+```javascript
+cordova.plugins.foregroundService.isIgnoringBatteryOptimizations(
+  (v) => console.log('ignoringBatteryOptimizations=', String(v)),
+  console.warn
+);
+
+cordova.plugins.foregroundService.requestIgnoreBatteryOptimizations();
+// Or, if the prompt cannot be shown:
+cordova.plugins.foregroundService.openBatteryOptimizationSettings();
+```
+
 ### Stop Method
 
 To disable the foreground service, call the `stop` method:
