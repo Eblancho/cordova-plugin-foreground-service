@@ -24,7 +24,7 @@
                 android:name="com.davidbriglio.foreground.ForegroundService"
                 android:exported="false"
                 android:stopWithTask="true"
-                android:foregroundServiceType="dataSync" />
+                />
         </config-file>
 
         <config-file target="config.xml" parent="/*">
@@ -35,8 +35,6 @@
 
         <config-file target="AndroidManifest.xml" parent="/*">
             <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-            <!-- Required when using android:foregroundServiceType="dataSync" on newer Android versions -->
-            <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
             <!-- Android 13+ requires runtime permission for notifications -->
             <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
             <!-- Allow requesting exclusion from Doze / battery optimizations (user prompt). -->

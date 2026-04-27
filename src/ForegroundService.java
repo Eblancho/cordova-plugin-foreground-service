@@ -132,27 +132,7 @@ public class ForegroundService extends Service {
         // Android 10+ ajoute la surcharge startForeground(id, notification, serviceType).
         // Android 14 (targetSdk 34) exige explicitement un type; on tente donc d'utiliser
         // cette surcharge quand elle existe, sans dépendance compileSdk spécifique.
-        if (android.os.Build.VERSION.SDK_INT >= 29) {
-            try {
-                int serviceType = 0;
-                try {
-                    serviceType = Class.forName("android.content.pm.ServiceInfo")
-                        .getField("FOREGROUND_SERVICE_TYPE_DATA_SYNC")
-                        .getInt(null);
-                } catch (Throwable ignored) {
-                    serviceType = 0;
-                }
-
-                if (serviceType != 0) {
-                    Service.class
-                        .getMethod("startForeground", int.class, Notification.class, int.class)
-                        .invoke(this, notificationId, notification, serviceType);
-                    return;
-                }
-            } catch (Throwable ignored) {
-                // Fallback ci-dessous.
-            }
-        }
+        // Pas de foregroundServiceType spécifique (ex: dataSync).
 
         startForeground(notificationId, notification);
     }
