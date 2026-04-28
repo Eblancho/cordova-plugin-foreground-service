@@ -2,7 +2,7 @@
 <plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
         xmlns:android="http://schemas.android.com/apk/res/android"
         id="cordova-plugin-foreground-service"
-        version="2.2.0">
+        version="2.4.0">
 
     <name>Cordova Foreground Service</name>
     <description>Foreground service with ongoing notification.</description>
@@ -24,7 +24,7 @@
                 android:name="com.davidbriglio.foreground.ForegroundService"
                 android:exported="false"
                 android:stopWithTask="true"
-                />
+                android:foregroundServiceType="shortService" />
         </config-file>
 
         <config-file target="config.xml" parent="/*">
